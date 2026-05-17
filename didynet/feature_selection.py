@@ -6,13 +6,13 @@ def compute_feature_variances(df, name):
     required = {'SubjectID', 'Time'}
     missing = required - set(df.columns)
     if missing:
-        raise KeyError(f"{name}: 缺少必要列 {missing}")
+        raise KeyError(f"{name}: Missing required columns {missing}")
 
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     feature_cols = [c for c in numeric_cols if c not in ('SubjectID', 'Time')]
 
     if len(feature_cols) == 0:
-        print(f"{name}: 未找到数值型特征列，返回空表。")
+        print(f"{name}: No numeric feature columns found, returning empty dataframe.")
         return pd.DataFrame(columns=['Feature','Var_Time_mean','Var_Subject_mean'])
 
     var_time_mean = df.groupby('Time')[feature_cols].var(ddof=1).mean()
@@ -24,7 +24,7 @@ def compute_feature_variances(df, name):
         'Var_Subject_mean': var_subject_mean.values
     })
     
-    print(f"{name} 特征数(数值型): {len(out)}")
+    print(f"{name} Feature count (numeric): {len(out)}")
     return out
 
 def select_and_save_by_variance(var_df, name, tops, save_dir):
@@ -34,7 +34,7 @@ def select_and_save_by_variance(var_df, name, tops, save_dir):
 
     df = var_df.dropna(subset=['Var_Time_mean', 'Var_Subject_mean']).copy()
     if df.empty:
-        print(f"{name}: 输入 var_df 为空(或全为 NaN)，不生成任何 top 列表。")
+        print(f"{name}: Input var_df is empty (or all NaN), no top lists generated.")
         pd.DataFrame(columns=[
             "Dataset","K","Time_Threshold","Subject_Threshold",
             "N_Time_Top","N_Subject_Top","N_Intersection","N_Union"
@@ -52,7 +52,7 @@ def select_and_save_by_variance(var_df, name, tops, save_dir):
 
         kk = min(k, nfeat)
         if kk < k:
-            print(f"{name}: K={k} 超过特征数 {nfeat}，已截断为 {kk}。")
+            print(f"{name}: K={k} exceeds feature count {nfeat}, truncated to {kk}.")
 
         time_thresh = df['Var_Time_mean'].nlargest(kk).min()
         subj_thresh = df['Var_Subject_mean'].nlargest(kk).min()
@@ -90,13 +90,13 @@ def select_and_save_by_variance(var_df, name, tops, save_dir):
     summary_df = pd.DataFrame(summary_rows)
     summary_path = os.path.join(save_dir, f"{name}_thresholds_summary.csv")
     summary_df.to_csv(summary_path, index=False)
-    print(f"{name}: 已保存 {len(summary_rows)*4} 个名单CSV 以及阈值汇总 → {save_dir}")
-    print(f"{name}: 阈值汇总文件 → {summary_path}")
+    print(f"{name}: Saved {len(summary_rows)*4} list CSVs and threshold summary -> {save_dir}")
+    print(f"{name}: Threshold summary file -> {summary_path}")
     return result
 
 def run_feature_selection(cytokines_clean, transcriptome_clean, proteomics_clean, base_path, target_k):
     print("\n====================================")
-    print("=== Step 2: 2D Variance 特征过滤 ===")
+    print("=== Step 2: 2D Variance Feature Filtering ===")
     print("====================================")
     save_dir = os.path.join(base_path, "top_features")
     

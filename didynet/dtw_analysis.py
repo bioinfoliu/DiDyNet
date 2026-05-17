@@ -21,7 +21,7 @@ def build_omics_by_k(data_map: dict, results_map: dict, k: int, mode: str, id_co
     omics_by_k = {}
     for name, df in data_map.items():
         if name not in results_map:
-            raise KeyError(f"results_map 缺少 {name}")
+            raise KeyError(f"results_map is missing {name}")
         feats = get_features_for_k(results_map[name], k, mode)
         omics_by_k[name] = extract_filtered_features_df(df, feats, id_col=id_col, time_col=time_col)
     return omics_by_k
@@ -58,7 +58,7 @@ def compute_dtw_for_feature_pair(f1, f2, dict1, dict2, subjects):
 
 def run_wilcoxon_test_in_memory(df_distances, out_file):
     if df_distances.empty:
-        print("⚠️ 距离矩阵为空，跳过检验。")
+        print("⚠️ Distance matrix is empty, skipping test.")
         return
 
     df_distances['pair'] = df_distances.apply(lambda row: tuple(sorted([row['feature1'], row['feature2']])), axis=1)
@@ -91,7 +91,7 @@ def run_wilcoxon_test_in_memory(df_distances, out_file):
         pval_df['significant'] = []
 
     pval_df.to_csv(out_file, index=False)
-    print(f"✅ 完成检验: {os.path.basename(out_file)} | 发现显著特征对(FDR<0.05): {pval_df['significant'].sum()} 个")
+    print(f"✅ Test complete: {os.path.basename(out_file)} | Significant feature pairs found (FDR<0.05): {pval_df['significant'].sum()}")
 
 def compute_groupwise_dtw_and_test(
     omics1, omics2, subjects, omics1_name, omics2_name, group_name,
@@ -106,11 +106,11 @@ def compute_groupwise_dtw_and_test(
     else:
         feature_pairs = [(a, b) for a in feats1 for b in feats2]
 
-    print(f"\n🧬 开始比对: {omics1_name} × {omics2_name} | 生成有效特征对数量: {len(feature_pairs)}")
+    print(f"\n🧬 Starting comparison: {omics1_name} × {omics2_name} | Valid feature pairs generated: {len(feature_pairs)}")
 
     parallel_outputs = Parallel(n_jobs=-1, batch_size="auto")(
         delayed(compute_dtw_for_feature_pair)(f1, f2, dict1, dict2, subjects)
-        for f1, f2 in tqdm(feature_pairs, desc=f"🚀 DTW 距离计算中")
+        for f1, f2 in tqdm(feature_pairs, desc=f"🚀 Calculating DTW distances")
     )
 
     all_sims = []
@@ -128,7 +128,7 @@ def compute_groupwise_dtw_and_test(
     raw_filename = f"{omics1_name}_{omics2_name}_{group_name}_{tag}_all_distances_with_group_dedup.csv"
     raw_path = os.path.join(DTW_path, raw_filename)
     all_sims_df.to_csv(raw_path, index=False)
-    print(f"✅ 距离矩阵已保存至: {raw_filename}")
+    print(f"✅ Distance matrix saved to: {raw_filename}")
     
     test_filename = f"{omics1_name}_{omics2_name}_{group_name}_{tag}_wilcoxon_results.csv"
     test_path = os.path.join(DTW_path, test_filename)
@@ -153,7 +153,7 @@ def run_all_combinations_for_k(omics_by_k: dict, subjects, IRIS_label, k: int, m
 
 def run_dtw_pipeline(data_map, results_map, IRIS_label, subjects_all, base_path, target_k):
     print("\n====================================")
-    print("=== Step 3: DTW 计算与显著性检验 ===")
+    print("=== Step 3: DTW Calculation and Significance Testing ===")
     print("====================================")
     DTW_path = os.path.join(base_path, "results/DTW")
     os.makedirs(DTW_path, exist_ok=True)
@@ -161,7 +161,7 @@ def run_dtw_pipeline(data_map, results_map, IRIS_label, subjects_all, base_path,
     mode = "union"   
     id_col, time_col = "SubjectID", "Time"
 
-    print(f"\n>>>> 开始处理 K={target_k} 的流程 <<<<")
+    print(f"\n>>>> Starting pipeline for K={target_k} <<<<")
     omics_k = build_omics_by_k(data_map, results_map, k=target_k, mode=mode, id_col=id_col, time_col=time_col)
 
     run_all_combinations_for_k(

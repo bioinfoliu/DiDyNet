@@ -8,7 +8,7 @@ from didynet.network import run_network_construction
 
 def main():
     parser = argparse.ArgumentParser(description="DiDyNet Pipeline Entry Point")
-    parser.add_argument('--base_path', type=str, default="/data/zliu/IRIS/", help="Base path for data and results")
+    parser.add_argument('--base_path', type=str, default="", help="Base path for data and results")
     parser.add_argument('--k', type=int, default=100, help="Top K hyperparameter for 2D Variance Filtering")
     parser.add_argument('--top_hubs', type=int, default=20, help="Number of Top Hubs to extract per omics layer")
     parser.add_argument('--ers_threshold', type=float, default=0.90, help="Edge Reliability Score threshold")
@@ -45,10 +45,10 @@ def main():
     if os.path.exists(input_edge_file):
         run_network_construction(args.base_path, input_edge_file, args.top_hubs, args.ers_threshold)
     else:
-        print(f"⚠️ 跳过网络绘图: 未找到汇总的网络边缘文件 ({input_edge_file})。")
-        print("如果您需要绘制单次运行的网络，请修改 run_pipeline.py 将该路径指向您的单次 post-hoc SCC 结果文件。")
+        print(f"⚠️ Skipping network plotting: Consolidated network edge file not found ({input_edge_file}).")
+        print("If you need to plot the network for a single run, please modify run_pipeline.py to point this path to your single post-hoc SCC result file.")
 
-    print("\n🎉 DiDyNet 核心流水线全部执行完毕！")
+    print("\n🎉 DiDyNet core pipeline execution completed successfully!")
 
 if __name__ == "__main__":
     main()

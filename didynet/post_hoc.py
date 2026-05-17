@@ -13,7 +13,7 @@ import time
 LMM_ALPHA = 0.05 
 
 def load_and_prepare_data(base_path):
-    print("📂 正在读取清洗后的数据文件...")
+    print("📂 Reading cleaned data files...")
     clean_data_dir = os.path.join(base_path, "data/cleaned")
     try:
         cyto_df = pd.read_csv(os.path.join(clean_data_dir, "cytokines_cleaned.csv"))
@@ -21,7 +21,7 @@ def load_and_prepare_data(base_path):
         trans_df = pd.read_csv(os.path.join(clean_data_dir, "transcriptome_cleaned.csv"))
         label_df = pd.read_csv(os.path.join(clean_data_dir, "IRIS_label_cleaned.csv"))
     except FileNotFoundError as e:
-        print(f"❌ 错误: 找不到文件! {e}")
+        print(f"❌ Error: File not found! {e}")
         return None
 
     shared_subjects = set(cyto_df['SubjectID']).intersection(
@@ -30,7 +30,7 @@ def load_and_prepare_data(base_path):
         set(trans_df['SubjectID'])
     )
     shared_list = sorted(list(shared_subjects))
-    print(f"🎯 识别到 {len(shared_list)} 个共有受试者 (Intersection).")
+    print(f"🎯 Identified {len(shared_list)} shared subjects (Intersection).")
 
     iris_map = label_df[['SubjectID', 'IRIS']].drop_duplicates().set_index('SubjectID')['IRIS'].to_dict()
 
@@ -64,7 +64,7 @@ def parse_filename_safe(fn: str):
     return om1, om2, k_val, mode
 
 def get_required_features(base_path, target_k):
-    print("🔍 正在扫描 DTW 结果文件，提取需要的特征子集...")
+    print("🔍 Scanning DTW result files, extracting required feature subsets...")
     dtw_results_dir = os.path.join(base_path, "results/DTW")
     files = glob.glob(os.path.join(dtw_results_dir, "*_wilcoxon_results.csv"))
     
@@ -96,7 +96,7 @@ def get_required_features(base_path, target_k):
         valid_files.append((fp, fn, om1, om2, K, mode, sig_col))
         
     for om, feats in required_features.items():
-        print(f"   - {om}: 共提取到 {len(feats)} 个需要计算的特征")
+        print(f"   - {om}: Extracted {len(feats)} features required for calculation")
         
     return required_features, valid_files
 
@@ -104,12 +104,12 @@ def run_lmm_for_selected_features(df_long, omics_name, target_features, save_dir
     cache_file = os.path.join(save_dir, f"lmm_pvals_{omics_name}_target_only.csv")
     
     if os.path.exists(cache_file):
-        print(f"✅ [{omics_name}] 加载已缓存的目标特征 P 值...")
+        print(f"✅ [{omics_name}] Loading cached target feature P-values...")
         tmp = pd.read_csv(cache_file, index_col=0)
         return tmp['p_value'].to_dict()
 
     feats_to_run = [f for f in target_features if f in df_long["Feature"].unique()]
-    print(f"🚀 [{omics_name}] 开始计算 LMM (仅针对提取出的 {len(feats_to_run)} 个目标特征)...")
+    print(f"🚀 [{omics_name}] Starting LMM calculation (only for the extracted {len(feats_to_run)} target features)...")
     
     p_values = {}
     warnings.simplefilter('ignore', ConvergenceWarning)
@@ -157,7 +157,7 @@ def classify_ddc_pairs(pairs_df, p_dict1, p_dict2, f1_col, f2_col):
 
 def run_post_hoc(base_path, target_k):
     print("\n====================================")
-    print("=== Step 4: LMM 事后精修与分类 ===")
+    print("=== Step 4: LMM Post-hoc Refinement and Classification ===")
     print("====================================")
     global_start_time = time.time() 
     save_dir = os.path.join(base_path, "results/PostHoc")
@@ -165,14 +165,14 @@ def run_post_hoc(base_path, target_k):
 
     required_features, valid_files = get_required_features(base_path, target_k)
     if not valid_files:
-        print("❌ 未找到符合条件的 DTW 结果文件，请检查目录和过滤条件！")
+        print("❌ No matching DTW result files found, please check the directory and filter conditions!")
         return
 
     raw_data_map = load_and_prepare_data(base_path)
     if not raw_data_map: return
 
     lmm_cache = {}
-    print("\n--- 步骤 1: 针对目标特征计算 LMM 背景显著性 ---")
+    print("\n--- Step 1: Calculate LMM background significance for target features ---")
     lmm_start_time = time.time() 
     for omics, df_long in raw_data_map.items():
         if required_features[omics]: 
@@ -181,7 +181,7 @@ def run_post_hoc(base_path, target_k):
             lmm_cache[omics] = {}
     lmm_end_time = time.time() 
 
-    print(f"\n--- 步骤 2: 对 {len(valid_files)} 个结果文件进行分类 ---")
+    print(f"\n--- Step 2: Classify {len(valid_files)} result files ---")
     summary_rows = []
     
     k100_time_spent = 0.0 
@@ -222,18 +222,18 @@ def run_post_hoc(base_path, target_k):
         df_summary = pd.DataFrame(summary_rows)
         df_summary = df_summary.sort_values(by=['Omics_Pair', 'K'])
         
-        print("\n=== Post-hoc 结果汇总 (Target Features Only) ===")
+        print("\n=== Post-hoc Summary (Target Features Only) ===")
         print(df_summary)
         
         summary_path = os.path.join(save_dir, "final_posthoc_summary_target.csv")
         df_summary.to_csv(summary_path, index=False)
-        print(f"\n✅ 任务完成。汇总结果已保存至: {summary_path}")
+        print(f"\n✅ Task complete. Summary results saved to: {summary_path}")
         
         total_time = time.time() - global_start_time
         lmm_time = lmm_end_time - lmm_start_time
         print("\n" + "="*40)
-        print("⏱️  性能耗时报告 (Time Report):")
-        print(f"  • LMM 核心计算总耗时: {lmm_time:.2f} 秒")
-        print(f"  • 仅分类与保存耗时: {k100_time_spent:.2f} 秒")
-        print(f"  • 脚本运行总耗时: {total_time:.2f} 秒")
+        print("⏱️  Performance Time Report:")
+        print(f"  • Total LMM core calculation time: {lmm_time:.2f} seconds")
+        print(f"  • Classification and saving time only: {k100_time_spent:.2f} seconds")
+        print(f"  • Total script execution time: {total_time:.2f} seconds")
         print("="*40 + "\n")

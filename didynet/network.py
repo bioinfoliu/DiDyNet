@@ -14,7 +14,7 @@ DEFAULT_COLOR = '#B09C85'
 
 def run_network_construction(base_path, input_edge_file, top_k_per_layer, ers_threshold):
     print("\n====================================")
-    print("=== Step 5: 构建鲁棒网络并绘图 ===")
+    print("=== Step 5: Construct Robust Network and Plot ===")
     print("====================================")
     
     save_dir = os.path.join(base_path, "results/Robustness_All_SCC")
@@ -27,18 +27,18 @@ def run_network_construction(base_path, input_edge_file, top_k_per_layer, ers_th
     weight_col = 'Abs_Avg_Diff' 
     fig_size = (12, 12) 
 
-    print(f"📂 正在读取汇总文件: {input_edge_file}")
+    print(f"📂 Reading summary file: {input_edge_file}")
     if not os.path.exists(input_edge_file):
-        print(f"❌ 找不到文件 {input_edge_file}！如果您尚未运行鲁棒性循环，请手动指定可用的 SCC 结果文件。")
+        print(f"❌ File not found: {input_edge_file}! If you haven't run the robustness loop, please manually specify a valid SCC result file.")
         return
         
     df_edges = pd.read_csv(input_edge_file)
 
     if 'Frequency' in df_edges.columns:
         df_edges = df_edges[df_edges['Frequency'] >= ers_threshold]
-        print(f"🛡️ 已应用 ERS >= {ers_threshold} 过滤。")
+        print(f"🛡️ Applied ERS >= {ers_threshold} filter.")
     
-    print("🧮 正在拆解 Edge 列并构建高稳健共识网络...")
+    print("🧮 Parsing Edge column and building highly robust consensus network...")
     G_full = nx.Graph()
     node_omics_map = {}
     
@@ -59,18 +59,18 @@ def run_network_construction(base_path, input_edge_file, top_k_per_layer, ers_th
             
     global_degrees = dict(G_full.degree())
     
-    print(f"⚖️ 正在分层提取每层 Top {top_k_per_layer} Hubs...")
+    print(f"⚖️ Stratifying and extracting Top {top_k_per_layer} Hubs per layer...")
     selected_nodes = []
     
     for omics in ['cytokines', 'proteomics', 'transcriptome']:
         layer_nodes = [n for n in G_full.nodes() if node_omics_map.get(n) == omics]
         top_k = sorted(layer_nodes, key=lambda x: global_degrees[x], reverse=True)[:top_k_per_layer]
         selected_nodes.extend(top_k)
-        print(f"   - {omics} 层提取了 {len(top_k)} 个 Hub 节点。")
+        print(f"   - Extracted {len(top_k)} Hub nodes for {omics} layer.")
 
     G_visual = G_full.subgraph(selected_nodes).copy()
 
-    print("🔄 计算力导向布局 (Kamada-Kawai)...")
+    print("🔄 Calculating force-directed layout (Kamada-Kawai)...")
     pos = nx.kamada_kawai_layout(G_visual, scale=2.0)
 
     node_colors = []
@@ -79,7 +79,7 @@ def run_network_construction(base_path, input_edge_file, top_k_per_layer, ers_th
 
     visual_degrees = [global_degrees[n] for n in G_visual.nodes()]
     if len(visual_degrees) == 0:
-        print("❌ 网络中没有节点，无法绘图。")
+        print("❌ No nodes in the network, cannot plot.")
         return
         
     min_deg, max_deg = min(visual_degrees), max(visual_degrees)
@@ -115,4 +115,4 @@ def run_network_construction(base_path, input_edge_file, top_k_per_layer, ers_th
 
     plt.savefig(output_fig_png, dpi=300, bbox_inches='tight', facecolor='white')
     plt.savefig(output_fig_pdf, format='pdf', bbox_inches='tight', facecolor='white')
-    print(f"✨ 绘图完成！已保存至:\n  - {output_fig_png}")
+    print(f"✨ Plotting complete! Saved to:\n  - {output_fig_png}")

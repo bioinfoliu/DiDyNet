@@ -7,19 +7,19 @@ from sklearn.preprocessing import StandardScaler
 
 def filter_by_label(df, name, ir_data):
     filtegray = df.merge(ir_data[['SubjectID', 'Time']], on=['SubjectID', 'Time'])
-    print(f"{name} 筛选有标签样本后数量: {len(filtegray)}")
+    print(f"{name} Count after filtering by label: {len(filtegray)}")
     return filtegray
 
 def deduplicate_with_mean(df, name):
     key_cols = ['SubjectID', 'Time']
     value_cols = df.select_dtypes(include='number').columns.difference(key_cols)
     df_dedup = df.groupby(key_cols)[value_cols].mean().reset_index()
-    print(f"{name} 去重完成：从 {len(df)} -> {len(df_dedup)} 行")
+    print(f"{name} Deduplication complete: from {len(df)} -> {len(df_dedup)} rows")
     return df_dedup
 
 def run_preprocessing(base_path):
     print("====================================")
-    print("=== Step 1: 数据预处理与样本对齐 ===")
+    print("=== Step 1: Data Preprocessing and Sample Alignment ===")
     print("====================================")
     plot_path = os.path.join(base_path, "plot")
     output_path = os.path.join(base_path, "output")
@@ -32,9 +32,9 @@ def run_preprocessing(base_path):
     proteomics_df = pd.read_csv(os.path.join(base_path, "data/raw_data/proteomics.csv"))
     transcriptome_df = pd.read_csv(os.path.join(base_path, "data/raw_data/RNA.csv"))
 
-    print(f"Cytokines 原始数据维度 (Raw Shape): {cytokines_df.shape}")
-    print(f"Proteomics 原始数据维度 (Raw Shape): {proteomics_df.shape}")
-    print(f"Transcriptome 原始数据维度 (Raw Shape): {transcriptome_df.shape}")
+    print(f"Cytokines Raw Shape: {cytokines_df.shape}")
+    print(f"Proteomics Raw Shape: {proteomics_df.shape}")
+    print(f"Transcriptome Raw Shape: {transcriptome_df.shape}")
 
     IRIS_label = pd.read_csv(os.path.join(base_path, "data/raw_data/IRIS_label.csv"))
     ir_data = IRIS_label[IRIS_label['IRIS'].isin(['IS', 'IR'])]
@@ -55,13 +55,13 @@ def run_preprocessing(base_path):
     proteomics_clean.columns = proteomics_clean.columns.str.replace(r'[^a-zA-Z0-9]', '_', regex=True)
     transcriptome_clean.columns = transcriptome_clean.columns.str.replace(r'[^a-zA-Z0-9]', '_', regex=True)
 
-    print(f"Cytokines 剩余观测数量: {len(cytokines_clean)}，维度: {cytokines_clean.shape}")
-    print(f"Transcriptome 剩余观测数量: {len(transcriptome_clean)}，维度: {transcriptome_clean.shape}")
-    print(f"Proteomics 剩余观测数量: {len(proteomics_clean)}，维度: {proteomics_clean.shape}")
+    print(f"Cytokines Remaining observations: {len(cytokines_clean)}, Shape: {cytokines_clean.shape}")
+    print(f"Transcriptome Remaining observations: {len(transcriptome_clean)}, Shape: {transcriptome_clean.shape}")
+    print(f"Proteomics Remaining observations: {len(proteomics_clean)}, Shape: {proteomics_clean.shape}")
 
-    print(f"Cytokines 独立样本数 (Unique Subjects): {cytokines_clean['SubjectID'].nunique()}")
-    print(f"Transcriptome 独立样本数 (Unique Subjects): {transcriptome_clean['SubjectID'].nunique()}")
-    print(f"Proteomics 独立样本数 (Unique Subjects): {proteomics_clean['SubjectID'].nunique()}")
+    print(f"Cytokines Unique Subjects: {cytokines_clean['SubjectID'].nunique()}")
+    print(f"Transcriptome Unique Subjects: {transcriptome_clean['SubjectID'].nunique()}")
+    print(f"Proteomics Unique Subjects: {proteomics_clean['SubjectID'].nunique()}")
 
     shared_subjects = set(cytokines_clean['SubjectID']).intersection(
         set(transcriptome_clean['SubjectID'])
@@ -69,27 +69,27 @@ def run_preprocessing(base_path):
         set(proteomics_clean['SubjectID'])
     )
 
-    print(f"\n=== 交集样本分析 ===")
-    print(f"三组学共有受试者数量 (Shared Subjects): {len(shared_subjects)}")
+    print(f"\n=== Shared Sample Analysis ===")
+    print(f"Shared Subjects across all three omics: {len(shared_subjects)}")
 
     cyto_shared_obs = len(cytokines_clean[cytokines_clean['SubjectID'].isin(shared_subjects)])
     trans_shared_obs = len(transcriptome_clean[transcriptome_clean['SubjectID'].isin(shared_subjects)])
     prot_shared_obs = len(proteomics_clean[proteomics_clean['SubjectID'].isin(shared_subjects)])
 
-    print(f"交集样本在 Cytokines 中的观测数量: {cyto_shared_obs}")
-    print(f"交集样本在 Transcriptome 中的观测数量: {trans_shared_obs}")
-    print(f"交集样本在 Proteomics 中的观测数量: {prot_shared_obs}\n")
+    print(f"Observations for shared subjects in Cytokines: {cyto_shared_obs}")
+    print(f"Observations for shared subjects in Transcriptome: {trans_shared_obs}")
+    print(f"Observations for shared subjects in Proteomics: {prot_shared_obs}\n")
 
     cytokines_clean = cytokines_clean[cytokines_clean['SubjectID'].isin(shared_subjects)].copy()
     proteomics_clean = proteomics_clean[proteomics_clean['SubjectID'].isin(shared_subjects)].copy()
     transcriptome_clean = transcriptome_clean[transcriptome_clean['SubjectID'].isin(shared_subjects)].copy()
     ir_data_clean = ir_data[ir_data['SubjectID'].isin(shared_subjects)].copy()
 
-    print(f"=== 最终落盘数据维度确认 (仅含共享样本) ===")
-    print(f"Cytokines 最终保存维度: {cytokines_clean.shape}")
-    print(f"Transcriptome 最终保存维度: {transcriptome_clean.shape}")
-    print(f"Proteomics 最终保存维度: {proteomics_clean.shape}")
-    print(f"Label 最终保存维度: {ir_data_clean.shape}\n")
+    print(f"=== Final Data Shape Confirmation (Shared Samples Only) ===")
+    print(f"Cytokines Final Shape: {cytokines_clean.shape}")
+    print(f"Transcriptome Final Shape: {transcriptome_clean.shape}")
+    print(f"Proteomics Final Shape: {proteomics_clean.shape}")
+    print(f"Label Final Shape: {ir_data_clean.shape}\n")
 
     save_path = os.path.join(base_path, "data/cleaned/")
     if not os.path.exists(save_path):
@@ -100,5 +100,5 @@ def run_preprocessing(base_path):
     transcriptome_clean.to_csv(os.path.join(save_path, "transcriptome_cleaned.csv"), index=False)
     ir_data_clean.to_csv(os.path.join(save_path, "IRIS_label_cleaned.csv"), index=False)
 
-    print(f"所有清洗后的文件 (仅包含 shared samples) 已保存至: {save_path}")
+    print(f"All cleaned files (shared samples only) saved to: {save_path}")
     return cytokines_clean, transcriptome_clean, proteomics_clean, ir_data_clean
