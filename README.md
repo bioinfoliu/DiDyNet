@@ -83,7 +83,7 @@ Once the pipeline finishes successfully, the results will be automatically saved
 
 We welcome feedback, bug reports, and academic collaborations!
 
-* **For Code & Technical Issues:** If you encounter any bugs, errors, or need help running the pipeline, please open an Issue on GitHub or contact **Zhe Liu** at `your_email@example.com`.
+* **For Code & Technical Issues:** If you encounter any bugs, errors, or need help running the pipeline, please open an Issue on GitHub or contact **Zhe Liu** at `lizzie_liu@snu.ac.kr`.
 * **For Academic & Methodological Inquiries:** For questions regarding the experimental design, algorithms, biological insights, or collaboration opportunities, please contact the corresponding author, **Prof. Taesung Park** at `tspark@stats.snu.ac.kr`.
 
 ## 📝 Citation
